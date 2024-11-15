@@ -1,5 +1,5 @@
 {
-	"name": "cloudflare-workers-openapi",
+	"name": "thing1",
 	"version": "0.0.1",
 	"private": true,
 	"scripts": {
@@ -9,14 +9,19 @@
 		"cf-typegen": "wrangler types"
 	},
 	"dependencies": {
+		"@dotenvx/dotenvx": "^1.23.0",
 		"chanfana": "^2.0.2",
+		"drizzle-orm": "^0.36.2",
 		"hono": "^4.4.7",
+		"jose": "^5.9.6",
+		"postgres": "^3.4.5",
+		"tsx": "^4.19.2",
 		"zod": "^3.23.8"
 	},
 	"devDependencies": {
 		"@cloudflare/workers-types": "^4.20240909.0",
 		"@types/node": "20.8.3",
 		"@types/service-worker-mock": "^2.0.1",
-		"wrangler": "^3.60.3"
+		"wrangler": "^3.78.3"
 	}
 }
