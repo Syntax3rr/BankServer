@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <dataSource name="postgres@aws-0-ca-central-1.pooler.supabase.com">
-  <database-model serializer="dbm" dbms="POSTGRES" family-id="POSTGRES" format-version="4.52">
+  <database-model serializer="dbm" dbms="POSTGRES" family-id="POSTGRES" format-version="4.53">
     <root id="1">
       <DateStyle>mdy</DateStyle>
       <Grants>1||-9223372036854775808|c|G
@@ -5387,8 +5387,8 @@ idle_in_transaction_session_timeout=60000</Config>
       <Event>ddl_command_end</Event>
       <ObjectId>16947</ObjectId>
       <StateNumber>914</StateNumber>
-      <Tags>SECURITY LABEL
-ALTER TABLE</Tags>
+      <Tags>ALTER TABLE
+SECURITY LABEL</Tags>
       <CallRoutineId>16831</CallRoutineId>
     </trigger>
   </database-model>
