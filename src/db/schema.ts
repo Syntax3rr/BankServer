@@ -1,11 +1,23 @@
-import { boolean, char, integer, pgTable, text, timestamp, uuid, varchar } from "drizzle-orm/pg-core";
+import {
+    bigint,
+    boolean,
+    char,
+    integer,
+    pgEnum,
+    pgTable,
+    smallint,
+    text,
+    timestamp,
+    uuid,
+    varchar
+} from "drizzle-orm/pg-core";
 import { relations, sql } from "drizzle-orm";
 
 export const usersTable = pgTable("users", {
     username: text("username").primaryKey(),
-    email: text("email"),
+    email: text("email").notNull().unique(),
     pin: integer("pin"),
-    isAdmin: boolean("is_admin"),
+    isAdmin: boolean("is_admin").default(false),
 });
 
 export const userRelations = relations(usersTable, ({ many }) => ({
@@ -16,7 +28,7 @@ export const currenciesTable = pgTable("currencies", {
     code: char("code", { length: 3 }).primaryKey(), // i.e. USD
     name: text("name").unique().notNull(),
     symbol: char("symbol", { length: 1 }).unique().notNull(),
-    decimals: integer("decimals").notNull(),
+    decimals: smallint("decimals").notNull(),
 });
 
 export const currencyRelations = relations(currenciesTable, ({ one, many }) => ({
@@ -28,7 +40,8 @@ export const currencyRelations = relations(currenciesTable, ({ one, many }) => (
 export const accountsTable = pgTable("accounts", {
     id: uuid().primaryKey().default(sql`gen_random_uuid()`),
     currency: char("currency", { length: 3 }).notNull().references(() => currenciesTable.code),
-    balance: integer("balance").notNull().default(0),
+    balance: bigint("balance", {mode: "bigint"}).notNull().default(0n),
+    isPublic: boolean("is_public").notNull().default(false),
     isMint: boolean("is_mint").notNull().default(false),
     createdAt: timestamp("created_at").notNull().default(sql`now()`),
 });
@@ -44,10 +57,11 @@ export const accountRelations = relations(accountsTable, ({ one, many }) => ({
 }));
 
 export const userAccountsTable = pgTable("user_accounts", {
-    username: text("username").references(() => usersTable.username),
-    accountId: uuid("account_id").references(() => accountsTable.id),
-    accountName: varchar("account_name", { length: 255 }).notNull(),
-    weeklyLimit: integer("weekly_limit").notNull().default(0), //0 means no limit
+    id: uuid().primaryKey().default(sql`gen_random_uuid()`),
+    username: text("username").notNull().references(() => usersTable.username),
+    accountId: uuid("account_id").notNull().references(() => accountsTable.id),
+    accountName: varchar("account_name", { length: 255 }),
+    weeklyLimit: bigint("weekly_limit", {mode: "bigint"}).notNull().default(0n), //0 means no limit
 });
 
 export const userAccountRelations = relations(userAccountsTable, ({ one }) => ({
@@ -66,7 +80,7 @@ export const transactionsTable = pgTable("transactions", {
     fromAccount: uuid("from_account").notNull().references(() => accountsTable.id),
     toAccount: uuid("to_account").notNull().references(() => accountsTable.id),
     currency: char("currency", { length: 3 }).notNull().references(() => currenciesTable.code),
-    amount: integer("amount").notNull(),
+    amount: bigint("amount", {mode:"bigint"}).notNull(),
     description: text("description"),
     executedAt: timestamp("executed_at").notNull().default(sql`now()`),
     createdAt: timestamp("created_at").notNull(),
@@ -93,7 +107,7 @@ export const pendingTransactionsTable = pgTable("pending_transactions", {
     fromAccount: uuid("from_account").references(() => accountsTable.id),
     toAccount: uuid("to_account").notNull().references(() => accountsTable.id),
     currency: char("currency", { length: 3 }).notNull().references(() => currenciesTable.code),
-    amount: integer("amount").notNull(),
+    amount: bigint("amount", {mode:"bigint"}).notNull(),
     description: text("description"),
     expiresAt: timestamp("expires_at").notNull().default(sql`now() + interval '5 minutes'`),
     createdAt: timestamp("created_at").notNull().default(sql`now()`),
@@ -133,3 +147,13 @@ export type InsertPendingTransaction = typeof pendingTransactionsTable.$inferIns
 export type SelectPendingTransaction = typeof pendingTransactionsTable.$inferSelect
 
 
+//// Because BigInts aren't supported by JSON.serialize()
+interface BigInt {
+    /** Convert to BigInt to string form in JSON.stringify */
+    toJSON: () => string;
+}
+
+// @ts-expect-error TS2339: Property toJSON does not exist on type BigInt
+BigInt.prototype.toJSON = function () {
+    return this.toString();
+};
