@@ -1,7 +1,7 @@
 export abstract class Repository<T> {
     protected readonly repository: Map<string, Partial<T>> = new Map()
 
-    protected abstract getFromDB<V extends keyof T>(key: string, ...params: V[]): Pick<T, V>
+    protected abstract getFromDB<V extends keyof T>(key: string, ...params: V[]): Promise<Partial<T>>
 
     protected updateRepository(key: string, partial: Partial<T>) {
         if (this.repository.has(key)) {

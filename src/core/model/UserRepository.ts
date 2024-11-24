@@ -1,5 +1,7 @@
 import {Repository} from "./Repository";
-import {SelectUser} from "../../db/schema";
+import {db} from "../../db";
+import {usersTable} from "../../db/schema";
+import {eq} from "drizzle-orm";
 
 export interface User {
     username: string,
@@ -12,17 +14,21 @@ export interface User {
 // If we had more users or more servers, we'd also want freshness checks.
 export class UserRepository extends Repository<User>{
 
-    protected override getFromDB<V extends keyof User>(key: string, ...params: V[]): Pick<User, V> {
-        const query: string[] = params
-        return undefined;
+    protected async getFromDB<V extends keyof User>(username: string, ...params: V[]) {
+        const thing = params.map((param) => [param, usersTable[param]])
+        const query = Object.fromEntries(thing)
+
+        return db.select(query)
+            .from(usersTable)
+            .where(eq(usersTable.username, username)) as Partial<User>
     }
 
-    public isAdmin(username: string): Pick<User, 'username'|'isAdmin'> {
+    public async isAdmin(username: string): Promise<boolean> {
         const localUser = this.repository.get(username)
         if (localUser && localUser.isAdmin != null) {
-            return { username, isAdmin: localUser.isAdmin } as Pick<User, 'username'|'isAdmin'>
+            return localUser.isAdmin
         }
 
-        return this.getFromDB(localUser.email, 'username', 'isAdmin')
+        return await this.getFromDB(username, 'isAdmin')
     }
 }
