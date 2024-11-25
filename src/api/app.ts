@@ -1,4 +1,4 @@
-import { fromHono } from "chanfana";
+import { extendZodWithOpenApi, fromHono } from "chanfana";
 import { Hono } from "hono";
 import auth from "./middleware/jwt-auth";
 
