@@ -1,5 +1,11 @@
 import { z } from "zod";
 
+export enum TransactionStatus {
+    PENDING = "PENDING",
+    EXECUTED = "EXECUTED",
+    CANCELLED = "CANCELLED",
+}
+
 export const Transaction = z.object({
     id: z.string(),
     from_account: z.string().optional(),
@@ -7,7 +13,7 @@ export const Transaction = z.object({
     currency: z.string(),
     amount: z.bigint(),
     description: z.string(),
-    is_pending: z.boolean(),
+    status: z.enum([TransactionStatus.PENDING, TransactionStatus.EXECUTED, TransactionStatus.CANCELLED]),
     created_at: z.string(),
     expires_at: z.string().optional(),
     executed_at: z.string().optional(),
@@ -20,7 +26,7 @@ export type transactionIndex = { id: string }
 export interface TransactionRepository {
     getFields<V extends keyof Transaction>(index: transactionIndex, ...params: V[]): Promise<Transaction | null>;
 
-    getAll(query: Partial<Transaction>): Promise<Transaction[]>;
+    getAll(query: Partial<Pick<Transaction, "from_account" | "to_account" | "currency" | "status">>): Promise<Transaction[]>;
 
     get(transactionId: string): Promise<Transaction | null>;
 

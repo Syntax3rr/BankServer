@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { Repository } from "./Repository";
+import { DBRepository } from "../../db/DBRepository";
 import { db } from "../../db/db";
 
 export const User = z.object({
@@ -18,34 +18,36 @@ export type userIndex =
 // We use a Partial type for lazy loading from DB.
 // If we had more users or more servers, we'd also want freshness checks.
 // We are fine caching the user data since we don't expect it to change.
-export class UserRepository extends Repository<User> {
+export interface UserRepository {
 
-    protected override async getFromDB<V extends keyof User>(index: userIndex, ...params: V[]) {
-        const keyIndex = Object.keys(index)[0] as keyof userIndex;
-        const result = await db.selectFrom("users")
-            .where(keyIndex, "=", index[keyIndex])
-            .select(params)
-            .executeTakeFirst();
+    // protected override async getFromDB<V extends keyof User>(index: userIndex, ...params: V[]) {
+    //     const keyIndex = Object.keys(index)[0] as keyof userIndex;
+    //     const result = await db.selectFrom("users")
+    //         .where(keyIndex, "=", index[keyIndex])
+    //         .select(params)
+    //         .executeTakeFirst();
+    //
+    //     if (result === undefined) {
+    //         return null;
+    //     }
+    //
+    //     const pickType: { [k in V]: never } = Object.assign({}, ...params.map((k) => ({ [k]: true } as { [k in V]: never })));
+    //     const safeResult = User.pick(pickType).safeParse(result);
+    //
+    //     if (!safeResult.success) {
+    //         throw new Error("Failed to parse result: " + safeResult.error.message);
+    //     }
+    //
+    //     return safeResult.data;
+    // }
 
-        const pickType: { [k in V]: never } = Object.assign({}, ...params.map((k) => ({ [k]: true } as { [k in V]: never })));
-        const safeResult = User.pick(pickType).safeParse(result);
+    getUser(index: userIndex): Promise<User | null>;
 
-        if (!safeResult.success) {
-            throw new Error("Failed to parse result: " + safeResult.error.message);
-        }
+    getAllUsers(): Promise<User[]>;
 
-        return safeResult.data;
-    }
+    createUser(user: User): Promise<void>;
 
-    public async getAuthDetails(email: string): Promise<Pick<User, "username" | "is_admin">> {
-        const localUser = this.repository.get(email);
-        if (localUser && localUser.username && localUser.is_admin != null) {
-            return {
-                username: localUser.username,
-                is_admin: localUser.is_admin
-            } as Pick<User, "username" | "is_admin">;
-        }
+    updateUser(index: userIndex, user: Partial<User>): Promise<void>;
 
-        return await this.getFromDB({ email }, "username", "is_admin");
-    }
+    getAuthDetails(email: string): Promise<Pick<User, "username" | "is_admin">>;
 }
